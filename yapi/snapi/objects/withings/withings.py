@@ -1,6 +1,5 @@
 import requests
-
-from .mixins.sleep import Sleep
+from . import Sleep
 
 class Withings:
     def __init__(self):

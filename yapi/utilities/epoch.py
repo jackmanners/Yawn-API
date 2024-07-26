@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 
 from datetime import datetime
-from tqdm import tqdm
 
 from yapi import YapiClient
 from yapi.snapi import Withings
@@ -212,7 +211,7 @@ class epoch:
         if not sleep_df:
             study_df = pd.DataFrame()
             
-        for file in tqdm(files):
+        for file in files:
             df = pd.read_csv(file)
             # move participant_id to the first column
             cols = list(df.columns)

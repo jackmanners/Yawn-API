@@ -11,7 +11,9 @@ setup(
     url='https://github.com/jackmanners/yawn-api',
     packages=find_packages(),
     install_requires=[
-        # List your package dependencies here
+        'pandas',
+        'numpy',
+        'requests',        
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
