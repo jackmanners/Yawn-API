@@ -1,5 +1,7 @@
 # Yawn-API (yapi)
 
+[![PyPI version](https://badge.fury.io/py/yawn-api.svg)](https://badge.fury.io/py/yawn-api)
+
 A Python package for interacting with the SNAPI API, YawnLabs, and various other health device APIs.
 
 ## Installation
