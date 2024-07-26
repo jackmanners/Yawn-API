@@ -103,20 +103,23 @@ class Files:
     
     def save(self, response,
              filename:str,
-             filepath:str = None,
-             extension:str = None):
+             filepath:str = None):
+        
         path = f'{filepath}/' if filepath else ''
-        extension = f'.{extension}' if extension else ''
+        if '.' in filename:
+            filename, extension = filename.split('.')
+        else:
+            extension = response.headers['Content-Type'].split('/')[-1].split(';')[0]
         
         if response.status_code == 200:
             try:
-                with open(f'{path}{filename}{extension}', 'wb') as f:
+                with open(f'{path}{filename}.{extension}', 'wb') as f:
                     f.write(response.content)
                 return True
             except Exception as e:
                 if self._verbose:
                     print(e)
-                    print(f"Failed to save file to {path}{filename}{extension}, check path and extension.")
+                    print(f"Failed to save file to {path}{filename}.{extension}, check path and extension.")
                 return False
         else:
             if self._verbose:

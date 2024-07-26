@@ -29,7 +29,9 @@ print(sleeps)
 
 ```
 
-YAPI also has a number of helper functions for working with the data returned by the API.
+### Utilities
+
+YAPI has a number of helper functions for working with the data returned by the API.
 For example, the below gets participants information for the associated study and then requests sleep summary information based on the participant IDs.\\
 The function `epoch.backup_study_epoch_data` is then called to retrieve epoch data for each participant directly from Withings and save them to individual .csv files.\\
 Finally, `epoch.combine_epoch_data` is called to combine the individual .csv files into a single DataFrame.
@@ -65,4 +67,49 @@ epoch_data = epoch.combine_epoch_data(
 )
 
 print(epoch_data.head())
+```
+
+### RedCap
+
+YAPI also has a number of helper functions for working with the RedCap API.
+
+For example, the below will get all records from a RedCap project, filter out to only includethose that have consented, and then create participant entries in the YawnLabs database for each of them.
+
+```python
+
+token = 'redcap_token'  # Required - the API token for the RedCap project.
+yrc = RedcapClient(verbose=False, token=token)
+    
+r = yrc.records.get()
+consented = [record for record in r if record['checkconsent'] == '1']
+
+for participant in consented:
+    yp.participants.create({
+        'lab_id': participant['lab_id'],
+        'study_name': 'MIMOSA'
+    })
+
+```
+
+Alternatively, the below will get a file from a RedCap project and save it to the current working directory.
+
+
+```python
+ypr = RedcapClient(verbose=True, token=s)
+
+response = ypr.files.get(
+    record_id='SAMOSA036',      # Required - the record ID in the RedCap project.
+    field='cpap_upload',        # Required - the field name in the RedCap project.
+    event='recruitment_arm_1'   # Required for longitudinal projects, only.
+)
+
+ypr.files.save(
+    response,
+    filename='test',# The extension can be automatically inferred from the 
+                    # response object, or specified manually 
+                    # (e.g., filename='test.pdf').
+    filepath='/data'# Optional - the path to save the file to. 
+                    # Defaults to the current working directory.
+)
+
 ```
