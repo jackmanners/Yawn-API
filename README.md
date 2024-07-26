@@ -7,7 +7,7 @@ A Python package for interacting with the SNAPI API, YawnLabs, and various other
 Install via Github using `pip install`:
 
 ```bash
-pip install git+git://github.com/jackmanners/yapi.git
+pip install git+https://github.com/jackmanners/yawn-api.git
 ```
 
 ## Usage

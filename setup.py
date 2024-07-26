@@ -8,7 +8,7 @@ setup(
     description='A Python package for interacting with the SNAPI API, YawnLabs, and various other health device APIs.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/jackmanners/yapi',
+    url='https://github.com/jackmanners/yawn-api',
     packages=find_packages(),
     install_requires=[
         # List your package dependencies here
