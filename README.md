@@ -1,4 +1,4 @@
-# yapi
+# Yawn-API (yapi)
 
 A Python package for interacting with the SNAPI API, YawnLabs, and various other health device APIs.
 
@@ -7,7 +7,7 @@ A Python package for interacting with the SNAPI API, YawnLabs, and various other
 Install via Github using `pip install`:
 
 ```bash
-pip install git+https://github.com/jackmanners/yawn-api.git
+pip install yawn-api
 ```
 
 ## Usage

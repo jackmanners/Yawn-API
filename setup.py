@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='yapi',
+    name='yawn-api',
     version='0.1.0',
     author='Jack Manners',
     author_email='jack.manners@flinders.edu.au',
