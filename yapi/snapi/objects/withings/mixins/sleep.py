@@ -38,7 +38,8 @@ class Sleep:
             responses.append(r if self._verbose else r.json())
 
         if not as_df or self._verbose:
-            print("Verbose mode enabled. Returning raw responses.")
+            if self._verbose:
+                print("Verbose mode enabled. Returning raw responses.")
             return responses
 
         import pandas as pd
