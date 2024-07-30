@@ -13,7 +13,7 @@ setup(
     install_requires=[
         'pandas',
         'numpy',
-        'requests',        
+        'requests',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

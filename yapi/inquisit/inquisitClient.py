@@ -48,7 +48,7 @@ class InquisitClient:
                 
             if self._verbose and i < len(files)-1:
                 print(' '*len(f'Processing file {i+1}/{len(files)}: {filename}'), end='\r')
-            else:
+            elif self._verbose:
                 print(' '*len(f'Processing file {i+1}/{len(files)}: {filename}'), end='\r')
                 
         summary_df = pd.concat(summary_data, ignore_index=True)
