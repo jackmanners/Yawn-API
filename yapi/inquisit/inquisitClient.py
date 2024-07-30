@@ -19,6 +19,9 @@ class InquisitClient:
         raw_data = []        
         
         for i, file in enumerate(files):
+            if len(test) > 0 and test.lower() not in file.lower():
+                continue
+            
             filename = os.path.basename(file)
             if self._verbose:
                 print(f'Processing file {i+1}/{len(files)}: {filename}', end='\r')
