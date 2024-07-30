@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yawn-api',
-    version='0.1.0',
+    version='0.1.1',
     author='Jack Manners',
     author_email='jack.manners@flinders.edu.au',
     description='A Python package for interacting with the SNAPI API, YawnLabs, and various other health device APIs.',

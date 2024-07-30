@@ -42,7 +42,7 @@ Finally, `epoch.combine_epoch_data` is called to combine the individual .csv fil
 yp = YapiClient()
 study = 'SAMOSA'
 
-study_participants = yp.withings.participants.get_all(study_name=study)
+study_participants = yp.participants.get_all(study_name=study)
 participant_ids = [participant['lab_id'] for participant in study_participants]
 
 sleeps = yp.withings.sleep.get(participant_ids, as_df=True)
