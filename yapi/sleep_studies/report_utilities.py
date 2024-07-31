@@ -3,6 +3,7 @@ import glob
 import re
 
 import pandas as pd
+from concurrent.futures import ProcessPoolExecutor
 from striprtf.striprtf import rtf_to_text
 
 def find_scored_folders(path, verbose=False):
@@ -25,28 +26,37 @@ def find_scored_folders(path, verbose=False):
     
     return scored_folders
 
-def find_reports(folders, verbose=True):
+def process_folder(folder, verbose, index, total_folders):
+    if verbose:
+        print(f"Processing folder {index+1}/{total_folders}")
+    # find all files in folder
+    files = os.listdir(folder)
+    # find all files that contain 'report' in the name
+    report_files = [file for file in files if 'report' in file.lower()]
     
     report_data = []
+    for report in report_files:
+        report_path = os.path.join(folder, report)
+        data = extract_data(report_path)
+        report_data.append(data)
     
-    for i, folder in enumerate(folders):
-        if verbose:
-            print(f"Processing folder {i+1}/{len(folders)}", end='\r')
-        # find all files in folder
-        files = os.listdir(folder)
-        # find all files that contain 'report' in the name
-        report_files = [file for file in files if 'report' in file.lower()]
+    return report_data
+
+def find_reports(folders, verbose=True, **kwargs):
+    report_data = []
+    total_folders = len(folders)
+    
+    if 'limit' in kwargs and kwargs['limit'] is not None:
+        folders = folders[:kwargs['limit']]
         
-        for report in report_files:
-            report_path = os.path.join(folder, report)
-            data = extract_data(report_path)
-            report_data.append(data)
-        
-        if verbose and i < len(folders)-1:
-            print(' '*len(f"Processing folder {i+1}/{len(folders)}"), end='\r')
-        elif verbose:
-            print(' '*len(f"Processing folder {i+1}/{len(folders)}"), end='\r')
-            
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                process_folder, folder, verbose, i, total_folders
+            ) for i, folder in enumerate(folders)]
+        for future in futures:
+            report_data.extend(future.result())
+    
     return report_data
             
 def extract_string(text, keyword, end_keyword, tabs=False):
@@ -58,13 +68,15 @@ def extract_string(text, keyword, end_keyword, tabs=False):
         value = match.group(1).strip()
         if tabs:
             value = value.split('\t')
+            # Remove empty strings
+            value = [v for v in value if v]
     return value
 
 def extract_numeric_equals(text, keyword, extra=None):
     # Pattern to find 'keyword', followed by any characters until '=', and then capture the next number
     pattern = rf"{keyword}.*?=\s*(\d+(\.\d+)?)"
     
-    match = re.search(pattern, text)
+    match = re.search(pattern, text, flags=re.DOTALL)
     
     enums, item = (extra[0], extra[1]) if isinstance(extra, tuple) else (extra, None)
     
@@ -107,7 +119,21 @@ def extract_data(report_path):
     
     supine = extract_numeric_equals(text, 'supine ahi', extra=2)
     non_supine = extract_numeric_equals(text, 'non-supine ahi', extra=2)
-     
+    
+    labels0 =  extract_string(text, rf'respiratory / sleep statistics.*?\n', '\n', tabs=True)
+    labels1 = extract_string(text, rf'respiratory / sleep statistics.*?\n.*?\n', '\n', tabs=True)
+    
+    # check if labels1 is repeated (e.g., reduce [a, b, c, a, b, c] to [a, b, c])
+    if labels1:
+        if labels1[:len(labels1)//2] == labels1[len(labels1)//2:]:
+            labels1 = labels1[:len(labels1)//2]
+    
+    labels = []
+    if labels0 and labels1:
+        for label0 in labels0:
+            for label1 in labels1:
+                labels.append(f"{label0}_{label1}")
+                
     data = {
         'filepath': report_path,
         'patient_id': extract_string(text, 'patient:', '\n'),
@@ -134,20 +160,20 @@ def extract_data(report_path):
         'non_supine_time': non_supine[1] if non_supine else None,
         'supine_percent': supine[2] if supine else None,
         'non_supine_percent': non_supine[2] if non_supine else None,
-        'central_apn': extract_string(text, rf'ahi.*?\ncentral apnea', '\n', tabs=True),
-        'obstructive_apn': extract_string(text, rf'ahi.*?\nobstructive apnea', '\n', tabs=True),
-        'mixed_apn': extract_string(text, rf'ahi.*?\nmixed apnea', '\n', tabs=True),
-        'hypopn': extract_string(text, rf'ahi.*?\nhypopnea', '\n', tabs=True),
-        'apn_hypopn': extract_string(text, rf'ahi.*?\napnea+hypopnea', '\n', tabs=True),
-        'ai_resp': extract_numeric_equals(text, rf'arousals per hour:.*?respiratory'),
-        'ai_limb': extract_numeric_equals(text, rf'arousals per hour:.*?limb movement'),
-        'ai_spont': extract_numeric_equals(text, rf'arousals per hour:.*?spontaneous'),
-        'ai_total': extract_numeric_equals(text, rf'arousals per hour:.*?total arousals'),
-        'sleep_stats_lables0': extract_string(text, rf'respiratory / sleep statistics.*?\n', '\n', tabs=True),
-        'sleep_stats_lables1': extract_string(text, rf'respiratory / sleep statistics.*?\n.*?\n', '\n', tabs=True),
-        'sao2_min_average': extract_string(text, rf'sao2% min average', '\n', tabs=True),
-        'sao2_lowest': extract_string(text, rf'sao2% lowest', '\n', tabs=True),
+        'ai_resp': extract_numeric_equals(text, rf'arousal per hour:.*?\n*?respiratory'),
+        'ai_limb': extract_numeric_equals(text, rf'arousal per hour:.*?limb movement'),
+        'ai_spont': extract_numeric_equals(text, rf'arousal per hour:.*?spontaneous'),
+        'ai_total': extract_numeric_equals(text, rf'arousal per hour:.*?total arousals'),
         'sao2_awake': extract_numeric_equals(text, 'sao2 awake average'),
     }
     
+    for i, label in enumerate(labels):
+        data[label+'_central_apn'] = extract_string(text, rf'ahi.*?\n*?central apnea', '\n', tabs=True)[i]
+        data[label+'_obstructive_apn'] = extract_string(text, rf'ahi.*?\n*?obstructive apnea', '\n', tabs=True)[i]
+        data[label+'_mixed_apn'] = extract_string(text, rf'ahi.*?\n*?mixed apnea', '\n', tabs=True)[i]
+        data[label+'_hypopn'] = extract_string(text, rf'ahi.*?\n*?hypopnea', '\n', tabs=True)[i]
+        data[label+'_apn_hypopn'] = extract_string(text, rf'ahi.*?\n*?apnea\+hypopnea', '\n', tabs=True)[i]
+        data[label+'_sao2_min_average'] = extract_string(text, rf'sao2% min average', '\n', tabs=True)[i]
+        data[label+'_sao2_lowest'] = extract_string(text, rf'sao2% lowest', '\n', tabs=True)[i]
+       
     return data

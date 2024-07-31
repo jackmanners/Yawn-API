@@ -18,7 +18,6 @@ class Users:
         assert "username" in userdata
         assert "password" in userdata
         assert "email" in userdata
-        assert "admin" in userdata
         
         r = requests.post(self._user_base, headers=self._yapi._headers, json=userdata)
         
