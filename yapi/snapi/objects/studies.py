@@ -18,13 +18,28 @@ class Studies:
         return r if self._verbose else r.json()
     
     def create(self, study_data):
+        """
+        Creates a new study with the given study data.
+
+        Args:
+            study_data (dict): A dictionary containing the study data. 
+                                It should include, at least, the "name" key.
+                                Also, 'using_withings', 'using_fitbit', etc. can be included.
+
+        Returns:
+            If the request is successful and the `_verbose` flag is set to `True`, returns the response object.
+            Otherwise, returns the JSON response as a dictionary.
+
+        Raises:
+            AssertionError: If the "name" key is not present in the `study_data` dictionary.
+        """
         assert "name" in study_data
-        
+
         r = requests.post(
             self._user_base,
             headers=self._yapi._headers, 
             json=study_data)
-        
+
         return r if self._verbose else r.json()
     
     def delete(self, username):

@@ -17,9 +17,14 @@ class Report:
     def collate(self, path, savepath=None, verbose=True):
         
         scored_folders = find_scored_folders(path, verbose=verbose)
-        data = find_reports(scored_folders, verbose=verbose)
+        data = find_reports(scored_folders, verbose=verbose, limit=None)
         df = pd.DataFrame(data)
-        
+
+        # Change values to int where possible
+        for col in df.columns:
+            try: df[col] = pd.to_numeric(df[col])
+            except: pass
+
         if savepath:
             df.to_csv(savepath, index=False)
         
