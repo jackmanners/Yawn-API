@@ -14,13 +14,12 @@ def find_scored_folders(path, verbose=False):
     # Record all tho folders that contain these files
     
     scored_folders = []
-    for root, dirs, files in os.walk(path):\
-        # check if folder contains both a file with 'report' in the name and a .DAT or .SLP file
-        if any(
-            'report' in file.lower() for file in files) and any(
-                file.lower().endswith('.DAT') or file.lower().endswith('.slp') for file in files):
-            scored_folders.append(root)
-    
+    scored_folders.extend(
+        root for root, _, files in os.walk(path)
+        if any('report' in file.lower() for file in files) and
+        any(file.lower().endswith(('.dat', '.slp', '.rtf')) for file in files)
+    )
+        
     if verbose:
         print(f"Found {len(scored_folders)} scored folders...")
     
@@ -36,9 +35,12 @@ def process_folder(folder, verbose, index, total_folders):
     
     report_data = []
     for report in report_files:
-        report_path = os.path.join(folder, report)
-        data = extract_data(report_path)
-        report_data.append(data)
+        try:
+            report_path = os.path.join(folder, report)
+            data = extract_data(report_path)
+            report_data.append(data)
+        except:
+            pass
     
     return report_data
 
@@ -55,7 +57,10 @@ def find_reports(folders, verbose=True, **kwargs):
                 process_folder, folder, verbose, i, total_folders
             ) for i, folder in enumerate(folders)]
         for future in futures:
-            report_data.extend(future.result())
+            try:
+                report_data.extend(future.result())
+            except:
+                pass
     
     return report_data
             
