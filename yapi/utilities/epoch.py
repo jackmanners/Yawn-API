@@ -1,4 +1,4 @@
-import os, glob, time
+import os, glob, time, traceback
 import pandas as pd
 import numpy as np
 
@@ -57,24 +57,30 @@ class epoch:
                     px_df = pd.DataFrame()
                     sleep_ids = []
             else:
+                sleep_ids = []
                 if any([lab_id in file for file in files]):
                     continue
                 
             withings.sleep.update(lab_id)
             sleeps = withings.sleep.get(lab_id)
-            
-            try:
-                sleeps = [int(sleep['w_id']) for sleep in sleeps]
-            except:
-                if verbose: print(f"Error for {lab_id}")
-                if verbose: print(sleeps)
-                continue
-            
-            if len(sleeps) == 0:
+                        
+            if len(sleeps) == 0 or sleeps == [[]]:
                 if verbose: print(f"No sleeps for {lab_id}")
                 with open(f'{datapath}/log_{timestart}.txt', 'a') as f:
                     f.write(f"\t{lab_id}: NO SLEEPS\n")
                 continue
+            
+            try:
+                sleeps = [int(sleep['w_id']) for sleep in sleeps]
+            except Exception as e:
+                if verbose: 
+                    print(sleeps)
+                    print(f"Error for {lab_id}")
+                    print(e)
+                    print(traceback.format_exc())
+                    quit()
+                # if verbose: print(sleeps)
+                continue            
             
             sleeps = [sleep for sleep in sleeps if sleep not in sleep_ids]
             if verbose: print(f"Found {len(sleeps)} new sleeps for {lab_id}")
@@ -88,11 +94,13 @@ class epoch:
             
             time.sleep(1)
             px_nights = {}
+            px_df = pd.DataFrame()
             
             for s, sleep in enumerate(sleeps):
                 total_perc = np.round(i / len(pxs) * 100, 1)
                 t1 = time.time()
-                if verbose: print(f"Getting data for {lab_id} ({total_perc}%): sleep {s+1} of {len(sleeps)}")
+                if verbose: 
+                    print(f"Getting data for {lab_id} ({total_perc}%): sleep {s+1} of {len(sleeps)}", end='\r')
                 try:
                     r = withings.sleep.epoch.get(lab_id, sleep)
                 except:
@@ -194,9 +202,14 @@ class epoch:
             else:
                 w_ids = []
             
+            # Check if the logfile still exists, re-create it if it doesn't
+            if not os.path.exists(f'{datapath}/log_{timestart}.txt'):
+                with open(f'{datapath}/log_{timestart}.txt', 'w') as f:
+                    f.write(f"Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            
             with open(f'{datapath}/log_{timestart}.txt', 'r') as f:
-                        log = f.readlines()
-                        logfill = log[:-1]    
+                log = f.readlines()
+                logfill = log[:-1]    
             with open(f'{datapath}/log_{timestart}.txt', 'w') as f:
                 f.write(''.join(logfill))
                 f.write(f"\t{lab_id}: {len(sleeps)} sleeps to add - COMPLETE ({len(w_ids)} total)\n")

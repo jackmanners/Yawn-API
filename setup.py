@@ -14,6 +14,7 @@ setup(
         'pandas',
         'numpy',
         'requests',
+        'dotenv'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
