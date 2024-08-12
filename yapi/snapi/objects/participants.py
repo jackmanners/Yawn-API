@@ -42,7 +42,6 @@ class Participants:
         return r if self._verbose else r.json()
     
     def create(self, participantdata):
-        assert "lab_id" in participantdata
         assert "study_name" in participantdata
         
         r = requests.post(

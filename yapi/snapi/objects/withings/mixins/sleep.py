@@ -40,11 +40,11 @@ class Sleep:
         if not as_df or self._verbose:
             if self._verbose:
                 print("Verbose mode enabled. Returning raw responses.")
-            return responses
+            return responses[0] if len(participants) == 1 else responses
 
         import pandas as pd
         df = pd.concat([pd.DataFrame(record) for record in responses], ignore_index=True)
-
+        
         return df
     
     def update(self, participant_id:str):
