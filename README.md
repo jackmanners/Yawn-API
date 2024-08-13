@@ -174,3 +174,27 @@ ds_summary.to_csv(f"{savepath}DigitSpan_combinedSummary.csv", index=False)
 ds_raw.to_csv(f"{savepath}DigitSpan_combinedRaw.csv", index=False)
 
 ```
+
+### Sleep Report Scraper
+
+
+```python
+def sleep_studies():
+    from yapi.sleep_studies import SleepStudies
+    yss = SleepStudies()
+    
+    path = 'path/to/sleep/studies'
+    savepath="savefolder/sleep_studies.csv"
+    
+    df = yss.report.collate(path)   # Optional - savepath. Left blank here
+                                    # due to further processing below.
+    
+    for i, row in df.iterrows():
+        # Filepath saved in the dataframe is the full path to the file
+        # Below is an example of using this to extract the filename and 
+        # participant ID.
+        df.at[i, 'file'] = row['filepath'].split('\\')[-1]
+        df.at[i, 'participant'] = row['filepath'].split('sleep\\')[-1].split('\\')[0]
+
+    df.to_csv(savepath, index=False)
+```
