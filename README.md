@@ -177,6 +177,9 @@ ds_raw.to_csv(f"{savepath}DigitSpan_combinedRaw.csv", index=False)
 
 ### Sleep Report Scraper
 
+YAPI also has a helper function for scraping sleep study reports. Currently, it is set up to look for .slp folders, .rtf files, and .dat files in order to find any .rft file with the word 'report' in it.
+
+This is a very basic implementation and will need to be adjusted for different file structures, but should be a good starting point.
 
 ```python
 def sleep_studies():
