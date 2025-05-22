@@ -163,3 +163,5 @@ snapi_credentials.ini
 main.py
 temp/
 gmail_credentials.json
+output/
+input/

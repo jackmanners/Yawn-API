@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yawn-api',
-    version='0.1.2',
+    version='0.1.3',
     author='Jack Manners',
     author_email='jack.manners@flinders.edu.au',
     description='A Python package for interacting with the SNAPI API, YawnLabs, and various other health device APIs.',
@@ -14,7 +14,7 @@ setup(
         'pandas',
         'numpy',
         'requests',
-        'dotenv'
+        'python-dotenv'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

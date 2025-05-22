@@ -25,5 +25,4 @@ class Users:
     
     def delete(self, username):
         r = requests.delete(self._user_base + "/" + str(username), headers=self._yapi._headers)
-        
-        return r if self._verbose else r.json()
+        return r

@@ -16,10 +16,13 @@ class InquisitClient:
             files = glob.glob(os.path.join(path, '*.iqdat'))
         
         summary_data = []
-        raw_data = []        
+        raw_data = []    
+        
+        testtext = test.lower().replace(' ', '')    
         
         for i, file in enumerate(files):
-            if len(test) > 0 and test.lower() not in file.lower():
+            filetext = file.lower().replace(' ', '')
+            if len(test) > 0 and testtext not in filetext:
                 continue
             
             filename = os.path.basename(file)

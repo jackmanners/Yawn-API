@@ -21,6 +21,14 @@ class epoch:
             output_folder = askdirectory()
         elif type(folder) == str:
             output_folder = folder
+        
+        date = datetime.now().strftime('%Y-%m-%d')
+        try:
+            nosleeps = pd.read_csv(f'{output_folder}/nosleeps_{date}.csv')
+        except FileNotFoundError:
+            nosleeps = pd.DataFrame()
+            nosleeps['lab_id'] = []
+            nosleeps.to_csv(f'{output_folder}/nosleeps_{date}.csv', index=False)
             
         datapath = f'{study}_EpochData' if not output_folder else f'{output_folder}'
         if verbose: print(f"Output folder: {datapath}")
@@ -45,6 +53,13 @@ class epoch:
             f.write(f"Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         
         for i, lab_id in enumerate(pxs):
+            total_perc = np.round(i / len(pxs) * 100, 1)
+            print(f"Getting data for {lab_id} ({total_perc}%)                                   ", end='\r')
+            
+            # skip if lab_id in nosleeps
+            if lab_id in nosleeps['lab_id'].values:
+                continue
+            
             # check if file exists with the lab_id in the name (it may have other parts to the name)
             if update:
                 try:
@@ -63,11 +78,16 @@ class epoch:
                 
             withings.sleep.update(lab_id)
             sleeps = withings.sleep.get(lab_id)
+            sleeps = sleeps.json()
                         
             if len(sleeps) == 0 or sleeps == [[]]:
-                if verbose: print(f"No sleeps for {lab_id}")
+                # if verbose: print(f"No sleeps for {lab_id}")
                 with open(f'{datapath}/log_{timestart}.txt', 'a') as f:
                     f.write(f"\t{lab_id}: NO SLEEPS\n")
+                
+                if lab_id not in nosleeps['lab_id'].values:
+                    nosleeps = pd.concat([nosleeps, pd.DataFrame({'lab_id': [lab_id]})], ignore_index=True)
+                    nosleeps.to_csv(f'{datapath}/nosleeps_{date}.csv', index=False)
                 continue
             
             try:
@@ -83,13 +103,13 @@ class epoch:
                 continue            
             
             sleeps = [sleep for sleep in sleeps if sleep not in sleep_ids]
-            if verbose: print(f"Found {len(sleeps)} new sleeps for {lab_id}")
             
             with open(f'{datapath}/log_{timestart}.txt', 'a') as f:
                 f.write(f"\t{lab_id}: {len(sleeps)} sleeps to add")
             
             # check if the px_nights file already exists
             if not update and os.path.exists(f'{datapath}/{lab_id}.csv'):
+                print(f"File already exists for {lab_id}")
                 continue
             
             time.sleep(1)
@@ -97,16 +117,22 @@ class epoch:
             px_df = pd.DataFrame()
             
             for s, sleep in enumerate(sleeps):
-                total_perc = np.round(i / len(pxs) * 100, 1)
                 t1 = time.time()
                 if verbose: 
-                    print(f"Getting data for {lab_id} ({total_perc}%): sleep {s+1} of {len(sleeps)}", end='\r')
+                    print(f"Getting data for {lab_id} ({total_perc}%): sleep {s+1} of {len(sleeps)}         ", end='\r')
                 try:
                     r = withings.sleep.epoch.get(lab_id, sleep)
-                except:
+                except Exception as e:
+                    print()
                     if verbose: print(f"Error for {lab_id}")
-                    r = withings.sleep.epoch.get(participant_id=lab_id, w_id=sleep, verbose=True)
-                    print(r)
+                    # print traceback
+                    print(traceback.format_exc())
+                    try:
+                        r = withings.sleep.epoch.get(participant_id=lab_id, w_id=sleep, verbose=True)
+                        print(r)
+                    except:
+                        pass
+                    print("\n CONTINUING \n")
                     continue
 
                 if 'message' in r:
@@ -114,11 +140,27 @@ class epoch:
                         if verbose: print(f"Token error for {lab_id}")
                         at = False
                         break
+                    
+                
                 if 'body' not in r:
-                    continue
+                    try:
+                        r = r.json()
+                    except:
+                        print("No body")
+                        continue
+                    if 'body' not in r:
+                        print("No body")
+                        continue
                 
                 if 'series' not in r['body']:
-                    continue
+                    try: 
+                        r = r.json()
+                    except:
+                        print("No series")
+                        continue
+                    if 'series' not in r['body']:
+                        print("No series")
+                        continue
                 
                 r_data = r['body']['series']
                 timestamps = []
@@ -216,15 +258,18 @@ class epoch:
                 
         return True
 
-    def combine_epoch_data(study, input_folder, output_folder=None, sleep_df=None, save=True):
+    def combine_epoch_data(study, input_folder, output_folder=None, sleep_df=None, save=True, verbose=False):
         
         output_folder = input_folder if output_folder is None else output_folder
         files = glob.glob(f"{input_folder}/*.csv")
+        # Remove any files that contain the word 'nosleep'
+        files = [file for file in files if 'nosleep' not in file]
         big_df = pd.DataFrame()
-        if not sleep_df:
-            study_df = pd.DataFrame()
+        study_df = sleep_df if type(sleep_df) == pd.DataFrame else pd.DataFrame()
             
-        for file in files:
+        for i, file in enumerate(files):
+            if verbose:
+                print(f"Processing {file} ({i+1} of {len(files)})")
             df = pd.read_csv(file)
             # move participant_id to the first column
             cols = list(df.columns)

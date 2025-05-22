@@ -111,4 +111,19 @@ class User:
             page.close()
         
         return True
+    
+    def refresh_token(self, participant_id):
+        """
+        Refresh the Withings access token for the given participant.
+
+        Args:
+            participant_id (int): The ID of the participant.
+
+        Returns:
+            If self._verbose is True, returns the response object from the POST request.
+            Otherwise, returns the JSON response from the POST request.
+        """
+        url = self._base_url + str(participant_id) + "/withings/refresh_token"
+        r = requests.post(url, headers=self._yapi._headers)
+        return r if self._verbose else r.json() 
         

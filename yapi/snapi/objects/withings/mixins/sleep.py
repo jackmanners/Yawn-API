@@ -38,8 +38,6 @@ class Sleep:
             responses.append(r if self._verbose else r.json())
 
         if not as_df or self._verbose:
-            if self._verbose:
-                print("Verbose mode enabled. Returning raw responses.")
             return responses[0] if len(participants) == 1 else responses
 
         import pandas as pd
@@ -61,8 +59,10 @@ class Sleep:
         """
         url = self._withings_base + str(participant_id) + "/withings/nights"
         r = requests.post(url, headers=self._yapi._headers)
-        
-        return r if self._verbose else r.json()
+        try:
+            return r if self._verbose else r.json()
+        except:
+            return r
     
     
 class epoch:
@@ -73,6 +73,12 @@ class epoch:
     
     def get(self, participant_id, w_id, verbose=False):
         url = self._withings_base + str(participant_id) + "/withings/epoch/" + str(w_id)
+        r = requests.get(url, headers=self._yapi._headers)
+        
+        return r if self._verbose or verbose else r.json()
+    
+    def get_summary(self, participant_id, verbose=False):
+        url = self._withings_base + str(participant_id) + "/withings/get_sleep"
         r = requests.get(url, headers=self._yapi._headers)
         
         return r if self._verbose or verbose else r.json()
